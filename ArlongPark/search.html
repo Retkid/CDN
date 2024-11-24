@@ -1,0 +1,1174 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arlong Park Explorer</title>
+    <link
+        rel="stylesheet"
+        []
+        href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css"
+        integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls"
+        crossorigin="anonymous"
+    />
+</head>
+
+<body>
+    <main>
+        <div id="top">
+            <div hidden id="warning" >
+                <p>There was an exception in contacting / parsing the output of the api.</p>
+                <p id="specific-warning"></p>
+            </div>
+            <form onsubmit="processForm(event)">
+                <select id="search-type">
+                    <option value="sub">Substring In Post Body</option>
+                    <option value="user">User</option>
+                    <option value="title">Post Title</option>
+                </select>
+                <input id="search" />
+            </form>
+            <div id="search-meta">
+                <h6 id="search-type">search type: default</h6>
+                <h6 id="query-time">query-time: 0ms</h6>
+                <h6 id="total-posts-found">total posts found: 0</h6>
+            </div>
+        </div>
+        <div hidden id="left-side">
+            <button id="show-chapter">Show occurence per chapter</button>
+            <button id="show-time">Show occurence over time</button>
+        </div>
+        <div hidden id="right-side">
+            <div class="query-group">
+                <label for="before">Time Span</label>
+                <select id="before">
+                    <option value="Off">Off</option>
+                    <option value="Chapter">Chapter</option>
+                    <option value="Time">Time (Date+Time)</option>
+                </select>
+                <div
+                    class="query-group"
+                    id="time-selectors-chapter"
+                    hidden="true"
+                >
+                    <label for="chapter-min">Start:</label>
+                    <form>
+                        <input type="number" id="chapter-min" />
+                    </form>
+                    <label for="chapter-max">End:</label>
+
+                    <form>
+                        <input type="number" id="chapter-max" />
+                    </form>
+                </div>
+                <div class="query-group" id="time-selectors-time" hidden>
+                    <label for="time-min">Start:</label>
+                    <input type="datetime-local" id="time-min" />
+                    <label for="time-max">End:</label>
+                    <input type="datetime-local" id="time-max" />
+                </div>
+            </div>
+            <div class="query-group">
+                <label for="author">From author:</label>
+                <select id="author">
+                    <option value="Off">Off</option>
+                    <option value="author-On">On</option>
+                </select>
+                <form onsubmit="processForm(event)">
+                    <input hidden id="author-input" />
+                </form>
+            </div>
+            <div class="query-group">
+                <label for="postId">In post id:</label>
+                <select id="postId">
+                    <option value="Off">Off</option>
+                    <option value="postId-on">On</option>
+                </select>
+                <form onsubmit="processForm(event)">
+                    <input hidden type="number" id="postId-input" />
+                </form>
+            </div>
+            <div class="query-group">
+                <label for="order">Order by:</label>
+                <select id="order">
+                    <option value="Oldest">Oldest</option>
+                    <option value="Newest">Newest</option>
+                </select>
+            </div>
+            <div class="query-group">
+                <label for="limit">Limit number of results (0 for off)</label>
+                <form onsubmit="processForm(event)">
+                    <input id="max-results" min="0" />
+                </form>
+            </div>
+        </div>
+
+        <div id="main-body-holder">
+            <div class="chart">
+                <canvas hidden id="chart-render"></canvas>
+            </div>
+            <div id="main-body"></div>
+        </div>
+
+        <div id="footer">
+            <button id="dec-page">decrease PAGE</button>
+            <p6>
+                <form onsubmit="doPageSelector(event)">
+                    <input id="page-select" />
+                </form>
+                of
+                <p6 id="num-of-pages">0</p6>
+            </p6>
+            </p6>
+
+            <button id="inc-page">increase PAGE</button>
+        </div>
+    </main>
+</body>
+<div hidden id="table-template" class="user-result">
+    <table>
+        <thead>
+            <th id="col1text"></th>
+            <th id="col2text"></th>
+            <th>search</th>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+</div>
+<div hidden>
+    <div id="template" class="post">
+        <div class="post-upper">
+            <div class="horizontal">
+                <button>[-]</button>
+
+                <h6 class="submitter">Jackass</h6>
+                <br />
+                <h6 class="creation-time">2018-5-03 18:20:40</h6>
+            </div>
+            <div class="buttons">
+                <button id="view-meta">Show Meta</button>
+
+                <button id="view-parent">View Parrent</button>
+                <button id="view-solo">View Solo</button>
+            </div>
+        </div>
+        <table hidden class="meta-table">
+            <thead>
+                <tr>
+                    <th>postId</th>
+                    <th>QuotedText length</th>
+                    <th>NonQuotedText length</th>
+                    <th>Is Reply</th>
+                    <th>Has Reply</th>
+
+                    <th>Macro Post Id</th>
+                    <th>Reply Post Id</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="meta-data">
+                </tr>
+            </tbody>
+        </table>
+        <div class="post-lower"></div>
+    </div>
+</div>
+
+<style>
+    main {
+        width: 95vw;
+        height: 95vh;
+        scroll: hidden;
+        margin-left: 2.5vw;
+        margin-right: 2.5vw;
+        margin-bottom: 2.5vh;
+        margin-top: 2.5vh;
+        display: grid;
+        grid-template-columns: repeat(20, 1fr); /* 20 equal columns */
+        grid-template-rows: repeat(20, 1fr); /* 20 equal rows */
+    }
+    #top {
+        grid-row: 1 / 2;
+        grid-column: 3 / 21;
+        text-align: center;
+    }
+    #left-side {
+        grid-row: 3 / 21;
+        grid-column: 1 / 3;
+        text-align: left;
+        align-items: left;
+        padding-right: 1vw;
+    }
+    #left-side button {
+        border: solid black 1px;
+    }
+    #left-side * {
+        padding-left: 0px;
+        margin-bottom: 2vh;
+    }
+
+    #right-side {
+        grid-row: 3 / 21;
+
+        grid-column: 18 / 21;
+    }
+    #right-side * {
+        max-width: 100%;
+    }
+    #main-body-holder {
+        grid-column: 3 / 18;
+        grid-row: 2 / 20;
+        overflow: scroll;
+    }
+    #main-body {
+        overflow: scroll;
+    }
+    #footer {
+        border-top: 10vh;
+        grid-column: 3 / 18;
+        grid-row: 21 / 22;
+    }
+    #top input {
+        text-align: center;
+        width: 50%;
+    }
+    .post-upper {
+        height: 9%;
+        display: flex;
+        margin-bottom: 0.8%;
+        align-items: center; /* Aligns items vertically */
+        margin-left: 1%;
+        overflow: hidden;
+    }
+    .horizontal {
+        width: 30%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center; /* Aligns items vertically */
+    }
+
+    .buttons {
+        display: flex;
+        justify-content: flex-end; /* Aligns items to the right */
+        width: 80%;
+        font-size: 16px;
+        text-overflow: scroll;
+        text-overflow: ellipsis;
+    }
+    .post {
+        border-top: dashed black 1px;
+        border-bottom: dashed black 1px;
+
+        margin-top: 2%;
+        margin-right: 3%;
+    }
+    .post-lower {
+    }
+    button {
+        background-color: transparent;
+        border: transparent;
+        font-size: 90%;
+        color: #2d2d2d;
+    }
+    .buttons button {
+        padding-right: 3%;
+    }
+    button:active {
+        color: lightgray;
+    }
+    button:hover {
+        color: darkgray;
+        cursor: pointer;
+    }
+    p3 {
+        line-height: 95%;
+    }
+    #search {
+        height: 5vh;
+    }
+    #title {
+        font-size: 4.2vh;
+    }
+    #top select {
+        max-width: 12%;
+    }
+    .submitter {
+        overflow: scroll;
+        margin-right: 2%;
+        width: 90%;
+        height: 100%;
+    }
+
+    .query-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .query-group * {
+        max-width: 100%;
+    }
+    #search-meta {
+        display: flex;
+        justify-content: row;
+        align-items: center;
+        height: 10%;
+        gap: 3%;
+        text-align: center;
+        margin-top: 0%;
+        z-index:99;
+        position: sticky;
+    }
+
+    #search-meta * {
+        margin-top: 0%;
+        margin-bottom: 1vh;
+
+    }
+
+    .user-result table {
+        align-items: center;
+        text-align: center;
+        width: 100%;
+        border: solid black 1px;
+    }
+
+    .td {
+        max-width: 50%;
+    }
+    p6 form {
+        display: inline-block;
+        width: 3%;
+    }
+    p6 form input {
+        width: 100%;
+    }
+    p6 button {
+        padding-right: 0px;
+    }
+    #footer {
+        text-align: center;
+    }
+    .meta-table{
+        width: 100%;
+        text-align: left;
+    }
+    .meta-table th {
+        font-size: 1vw;
+        border-right: 1px solid black;
+        border-left: 1px solid black;
+    }
+    .quote {
+        margin-left : 4vw;
+        color: grey;
+    }
+    #warning {
+        background-color: red;
+        color:white
+    }
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<script id="chart-lib">
+    let chart = null;
+    function downSample(list, interval) {
+        let i = 0;
+        let counter = interval;
+        let result = [];
+        list.forEach((x) => {
+            if (counter == interval) {
+                result.push(x);
+                counter = 0;
+            } else {
+                counter++;
+            }
+        });
+        return result;
+    }
+    function countChapters(obj) {
+        let result = {};
+        obj.forEach((x) => {
+            if (result[x]) {
+                result[x]++;
+            } else {
+                result[x] = 1;
+            }
+        });
+        return result;
+    }
+    function timeToPos(obj) {
+        let result = {};
+        let count = 1;
+        let on = true;
+        let length = obj.length;
+        if (obj.length > 1000) {
+            obj = downSample(obj, 40);
+        }
+        obj.forEach((x) => {
+            if (on) {
+                if (length > 1000) {
+                    result[new Date(x * 1000).toISOString()] = count * 40;
+                } else {
+                    result[new Date(x * 1000).toISOString()] = count;
+                }
+                on = true;
+            } else {
+                on = false;
+            }
+            count++;
+        });
+        return result;
+    }
+
+    function renderBarChart() {
+        const mb = document.querySelector("#main-body-holder");
+        mb.scrollTop = 0;
+        if (chart != null) {
+            chart.destroy();
+        }
+        const incidents = countChapters(
+            responseObject.subposts.map((x) => x.chapter),
+        );
+        const ctx = document.getElementById("chart-render");
+        ctx.removeAttribute("hidden");
+        chart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: Object.keys(incidents),
+                datasets: [
+                    {
+                        label: "Number Of Posts Found",
+                        data: Object.values(incidents),
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+
+    function renderLineChart() {
+        const mb = document.querySelector("#main-body-holder");
+        mb.scrollTop = 0;
+        if (chart != null) {
+            chart.destroy();
+        }
+        const ctx = document.getElementById("chart-render");
+        ctx.removeAttribute("hidden");
+        const time = timeToPos(
+            responseObject.subposts.map((x) => x.creationTime),
+        );
+        const max = time[time.length - 1];
+        const min = time[0];
+        const data = {
+            datasets: [
+                {
+                    label: "Total Mentions Over Time",
+                    data: time,
+                    borderColor: "rgb(75, 192, 192)",
+                    fill: false,
+                },
+            ],
+        };
+        const options = {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "top",
+                },
+                tooltip: {
+                    mode: "nearest",
+                    intersect: false,
+                },
+            },
+            scales: {
+                x: {
+                    min: min,
+                    max: max,
+                    type: "time",
+                    time: {
+                        unit: "day", // unit for displaying the data (e.g., 'day', 'minute', 'hour', etc.)
+                        tooltipFormat: "yyyy-dd-MM", // format for tooltip
+                        displayFormats: {
+                            day: "yyyy-dd-MM", // format for displaying date on the x-axis
+                        },
+                    },
+                    title: {
+                        display: true,
+                        text: "Date",
+                    },
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: "Value",
+                    },
+                },
+            },
+        };
+        chart = new Chart(ctx, {
+            type: "line",
+            data: data,
+            options: options,
+        });
+    }
+
+    const chapterbutton = document.getElementById("show-chapter");
+    const timebutton = document.getElementById("show-time");
+    chapterbutton.addEventListener("click", (event) => {
+        renderBarChart();
+    });
+    timebutton.addEventListener("click", (event) => {
+        renderLineChart();
+    });
+</script>
+
+<script id="lib-layout">
+    const endPoint = "http://albassort.com"
+    let order = "Oldest";
+    function setUrl(params) {
+        const url = new URL(window.location.href);
+        const searchCahce = url.search;
+        url.search = "";
+        Object.entries(params).forEach(([key, value]) => {
+            url.searchParams.set(key, value);
+        });
+        if (searchCahce.search != url.search) {
+            window.history.pushState({}, "", url);
+        }
+    }
+    async function doApiCall(path, params) {
+      try{
+          const apiLocation = new URL(endPoint);
+          Object.entries(params).forEach(([key, value]) => {
+              apiLocation.searchParams.set(key, value);
+          });
+          apiLocation.pathname = path;
+          const queryResponse = await fetch(apiLocation);
+          const qObject = await queryResponse.json();
+          responseObject = qObject;
+          return qObject;
+      }
+      catch(exception){
+        const error = document.querySelector("#warning");
+        const specificWarning = document.querySelector("#specific-warning");
+
+        warning.removeAttribute("hidden")
+        specificWarning.textContent = exception
+      }
+    }
+
+    function setToggle(option, input) {
+        option.addEventListener("change", (event) => {
+            const val = option.value;
+            console.log(val);
+            if (val === "Off") {
+                input.setAttribute("hidden", "");
+            } else {
+                input.removeAttribute("hidden");
+            }
+        });
+    }
+
+    const timeSpan = document.querySelector("#before");
+    const timeSelectorChapter = document.querySelector(
+        "#time-selectors-chapter",
+    );
+    const timeSelectorTime = document.querySelector("#time-selectors-time");
+    const postId = document.querySelector("#postId");
+    const author = document.querySelector("#author");
+    const authorInput = document.querySelector("#author-input");
+    const postidInput = document.querySelector("#postId-input");
+    const timeMin = document.querySelector("#time-min");
+    const timeMax = document.querySelector("#time-max");
+    const chapterMin = document.querySelector("#chapter-min");
+    const chapterMax = document.querySelector("#chapter-max");
+    const fourmSelector = document.querySelector("#in-fourm");
+    const searchType = document.querySelector("#search-type");
+    const searchInput = document.querySelector("#search");
+    const orderType = document.querySelector("#order");
+    const limit = document.querySelector("#max-results");
+    orderType.addEventListener("change", (event) => {
+        const val = event.target.value;
+        changePage(1)
+
+        if (val == order) {
+            return;
+        } else {
+            const mainBody = document.querySelector("#main-body");
+
+            responseObject.subposts = responseObject.subposts.reverse();
+            order = val;
+            mainBody.innerHTML = "";
+            pushSubposts(responseObject, {});
+        }
+    });
+    const incPage = document.querySelector("#inc-page");
+    incPage.addEventListener("click", (event) => {
+        increasePage(responseObject);
+    });
+    const decPage = document.querySelector("#dec-page");
+    decPage.addEventListener("click", (event) => {
+        decreasePage(responseObject);
+    });
+    timeSpan.addEventListener("change", (event) => {});
+    setToggle(postId, postidInput);
+    setToggle(author, authorInput);
+
+    searchType.addEventListener("change", (event) => {
+      const val = event.target.value;
+      const left = document.querySelector("#left-side");
+      const right = document.querySelector("#right-side");
+
+      switch (val){
+        case "sub":
+          left.removeAttribute("hidden");
+          right.removeAttribute('hidden');
+          break;
+        default:
+          left.setAttribute("hidden", "");
+          right.setAttribute('hidden', "");
+          break;
+      }
+    })
+    searchType.value = "sub";
+    postId.value = "Off";
+    timeSpan.value = "Off";
+    author.value = "Off";
+
+    timeSpan.addEventListener("change", (event) => {
+        const val = event.target.value;
+        switch (val) {
+            case "Off":
+                timeSelectorChapter.setAttribute("hidden", "");
+                timeSelectorTime.setAttribute("hidden", "");
+                break;
+            case "Chapter":
+                timeSelectorTime.setAttribute("hidden", "");
+                timeSelectorChapter.removeAttribute("hidden");
+                break;
+            case "Time":
+                timeSelectorChapter.setAttribute("hidden", "");
+                timeSelectorTime.removeAttribute("hidden");
+                break;
+        }
+    });
+
+    function setSubpostSearchUrl(event) {
+        const urls = {
+        };
+        switch (timeSpan.value) {
+            case "Off":
+                break;
+            case "Chapter":
+                urls.StartChapter = chapterMin.value;
+                urls.EndChapter = chapterMax.value;
+                break;
+            case "Time":
+                console.log("time");
+                urls.StartTime = new Date(timeMin.value).getTime() / 1000;
+                urls.EndTime = new Date(timeMax.value).getTime() / 1000;
+                break;
+        }
+        if (postId.value != "Off") {
+            urls.Inpostid = postidInput.value;
+        }
+        if (author.value != "Off") {
+            urls.Submitter = authorInput.value;
+        }
+        if (orderType.value == "Newest") {
+            urls.order = "Newest";
+        }
+
+        urls.limit = limit.value;
+        urls.query = searchInput.value;
+        urls.queryType = "sub";
+        setUrl(urls);
+        window.location.reload();
+    }
+
+    function setUserNameUrl() {
+        const url = { username: searchInput.value, queryType: "user" };
+        setUrl(url);
+        window.location.reload();
+    }
+
+    function setPostsUrl() {
+        const url = { query: searchInput.value, queryType: "title" };
+
+        setUrl(url);
+        window.location.reload();
+    }
+
+    async function defaultSearch() {
+        const query = await doApiCall("query", {});
+        pushSubposts(query, {});
+    }
+
+    function doPageSelector(event){
+      const input = document.querySelector("#page-select");
+      event.preventDefault()
+      const val = Number(input.value)
+      const main = document.querySelector("#main-body");
+
+      if (val >= 1 && numOfPages >= val){
+        changePage(val)
+        main.innerHTML = "";
+
+        pushSubposts(responseObject, {}, false)
+
+        console.log("hello")
+      }
+    }
+    async function processForm(event) {
+        event.preventDefault();
+        switch (searchType.value) {
+            case "sub":
+                setSubpostSearchUrl(event);
+                break;
+            case "user": {
+                setUserNameUrl(event);
+                break;
+            }
+            case "title": {
+                setPostsUrl(event);
+                break;
+            }
+        }
+    }
+
+    window.addEventListener("popstate", function () {
+        window.location.reload();
+    });
+</script>
+
+<script id="runtime">
+    let responseObject = {};
+    let urlParams = {};
+    const pageSize = 50;
+    let page = 1;
+    let numOfPages = 0;
+    function addOrChangeParams(obj){
+      const url = new URL(window.location.href);
+      const paramsObject = Object.fromEntries(url.searchParams.entries());
+      Object.entries(obj).forEach(([key, value]) => {
+          paramsObject[key] = value
+      });
+      setUrl(paramsObject)
+    }
+
+
+    function changePage(pageNum, changeUrl = true){
+      page = pageNum;
+      const selector = document.querySelector("#page-select");
+      selector.value = pageNum
+      if (changeUrl){
+        addOrChangeParams({page : pageNum})
+
+      }
+    };
+
+    function increasePage(queryBody) {
+        console.log(page);
+
+        const main = document.querySelector("#main-body");
+        if (page != numOfPages) {
+            main.innerHTML = "";
+            changePage(page+1)
+
+            pushSubposts(queryBody, {}, false);
+        }
+    }
+    function decreasePage(queryBody) {
+        console.log(page);
+        const main = document.querySelector("#main-body");
+        if (page != 1) {
+            main.innerHTML = "";
+            changePage(page-1)
+            pushSubposts(queryBody, {}, false);
+        }
+    }
+
+
+    function pushSubposts(queryBody, params = {}, setPageTo1 = true) {
+        const template = document.querySelector("#template");
+        const main = document.querySelector("#main-body");
+        const time = document.querySelector("#query-time");
+        const totalFound = document.querySelector("#total-posts-found");
+        time.textContent = `query-time: ${queryBody.queryTime}ms`;
+        totalFound.textContent = `total posts found: ${queryBody.subposts.length}`;
+        numOfPages = Math.ceil(queryBody.subposts.length / pageSize);
+
+        const totalPages = document.querySelector("#num-of-pages");
+        totalPages.textContent = numOfPages;
+
+        if (params != undefined && params.page == null && setPageTo1 == true) {
+          changePage(1, false);
+        }
+        else if (
+            params != undefined && params.page != null
+        ){
+          changePage(params.page, false);
+        }
+
+        if (
+            params != undefined &&
+            params.order != null &&
+            params.order == "Newest"
+        ) {
+            queryBody.subposts = queryBody.subposts.reverse();
+            order = "Newest";
+        }
+        queryBody.subposts
+            .slice((page - 1) * pageSize, page * pageSize)
+            .forEach((x) => {
+                const cloned = template.cloneNode(true);
+                const lower = cloned.querySelector(".post-lower");
+                const submitter = cloned.querySelector(".submitter");
+                const creationTime = cloned.querySelector(".creation-time");
+                const hideButton = cloned.querySelector(".horizontal button");
+                const buttons = cloned.querySelector(".buttons");
+                const viewParentButton = cloned.querySelector("#view-parent");
+                const viewSoloButton = cloned.querySelector("#view-solo");
+                const rowData = cloned.querySelector("#meta-data")
+                const viewMetaButton = cloned.querySelector("#view-meta");
+
+                let postidData = document.createElement("td")
+                postidData.textContent  = x.postId
+                let quotedLength = document.createElement("td")
+                quotedLength.textContent = x.quotedText.length
+                let nonQuotedLength = document.createElement("td")
+                nonQuotedLength.textContent = x.nonQuotedText.length
+                let isReplyRow = document.createElement("td")
+                isReplyRow.textContent = x.isReply
+                let hasReplyRow = document.createElement("td")
+                hasReplyRow.textContent = x.hasReply
+                let macroPost = document.createElement("td")
+                macroPost.textContent = x.macroPostId
+                let replypostid = document.createElement("td")
+                replypostid.textContent = x.replyPostId
+
+                rowData.appendChild(postidData)
+                rowData.appendChild(quotedLength)
+                rowData.appendChild(nonQuotedLength)
+                rowData.appendChild(isReplyRow)
+                rowData.appendChild(hasReplyRow);
+                rowData.appendChild(macroPost);
+                rowData.appendChild(replypostid);
+
+                viewMetaButton.addEventListener("click", (event) =>{
+
+                  const table = document.querySelector(
+                      `#id-${x.postId} table`
+                  );
+                  if (table.getAttribute('hidden') != null){
+                    table.removeAttribute("hidden")
+                  }
+                    else{
+                      table.setAttribute("hidden", "")
+                    }
+                })
+
+                hideButton.addEventListener("click", (event) => {
+                    console.log(`#id-${x.postId}`);
+                    const post = document.querySelector(
+                        `#id-${x.postId} .post-lower`,
+                    );
+
+                    if (post.getAttribute("hidden") != null) {
+                        post.removeAttribute("hidden", "");
+                    } else {
+                        post.setAttribute("hidden", "");
+                    }
+                });
+                viewParentButton.addEventListener("click", (event) => {
+                    const url = {
+                        Inpostid: x.postId,
+                        queryType: "sub",
+                        query: "",
+                    };
+                    setUrl(url);
+                    window.location.reload();
+                });
+                viewSoloButton.addEventListener("click", (event) => {
+                    console.log(event);
+                    console.log(x)
+
+                    const url = {
+                        postId: x.postId,
+                        queryType: "solo",
+                        query: "",
+                    };
+                    setUrl(url);
+                    window.location.reload();
+
+                });
+                submitter.textContent = x.submitter;
+                creationTime.textContent = new Date(x.creationTime * 1000)
+                    .toISOString()
+                    .substring(0, 16);
+                const body = x.nonQuotedText.split("\n");
+                const quoteBody = x.quotedText.split("\n");
+                if (x.quotedText.length != 0){
+                  let quoteDiv = document.createElement("div");
+                  quoteDiv.setAttribute("class", "quotes")
+                  quoteDiv.setAttribute("hidden", "")
+
+                  quoteBody.forEach((paragraph) => {
+                      const textContainer = document.createElement("div");
+                      const element = document.createElement("p2");
+                      element.textContent = paragraph;
+                      textContainer.setAttribute("class", "quote")
+                      textContainer.appendChild(element);
+                      quoteDiv.appendChild(textContainer)
+                      const breakElement = document.createElement("br");
+                      quoteDiv.appendChild(breakElement);
+                  });
+                  lower.appendChild(quoteDiv)
+                }
+
+                body.forEach((paragraph) => {
+                    const textContainer = document.createElement("div");
+                    const element = document.createElement("p2");
+                    element.textContent = paragraph;
+                    textContainer.appendChild(element);
+                    lower.appendChild(textContainer)
+                    const breakElement1 = document.createElement("br");
+                    const breakElement2 = document.createElement("br");
+                    lower.appendChild(breakElement1);
+                    lower.appendChild(breakElement2);
+                });
+
+                cloned.setAttribute("id", `id-${x.postId}`);
+                if (x.hasReply || x.isReply) {
+
+                    const button = document.createElement("button");
+                    button.addEventListener("click", (event) => {
+                        const obj = {
+                            queryType: "replyChain",
+                            postId: x.postId,
+                        };
+                        setUrl(obj);
+                        window.location.reload();
+                    });
+                    button.textContent = "View Reply Chain";
+                    buttons.appendChild(button);
+                }
+                if (x.quotedText.length != 0){
+                  const button = document.createElement("button");
+                  button.textContent = "Show Quote Text"
+                  buttons.appendChild(button);
+                  button.addEventListener("click", (event) => {
+                    let quoteDiv = lower.querySelector(".quotes")
+                    if (quoteDiv.getAttribute("hidden") == ""){
+                      quoteDiv.removeAttribute('hidden')
+                    }
+                    else {
+                      quoteDiv.setAttribute('hidden', "")
+                    }
+                  })
+                }
+                main.appendChild(cloned);
+            });
+    }
+
+    function pushTable(queryBody, col1Name, col2Name, callback) {
+        const mainBody = document.querySelector("#main-body");
+        mainBody.innerHTML = "";
+        const tableBody = document.querySelector("#table-template");
+        const cloned = tableBody.cloneNode(true);
+        const rows = cloned.querySelector("#table-body");
+        cloned.removeAttribute("hidden");
+        const col1 = cloned.querySelector("#col1text");
+
+        const col2 = cloned.querySelector("#col2text");
+        col1.textContent = col1Name;
+        col2.textContent = col2Name;
+        let i = 0;
+        queryBody.forEach((x) => {
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td>${x[0]}</td>
+                <td>${x[1]}</td>
+                <td><button id=button-${i}>click me</button></td>
+              `;
+            rows.appendChild(newRow);
+            const button = rows.querySelector(`#button-${i}`);
+            console.log("!");
+            button.addEventListener("click", (event) => {
+                callback(x);
+            });
+            i += 1;
+        });
+        mainBody.appendChild(cloned);
+    }
+
+    function convertTime(date) {
+        return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, -1);
+    }
+    async function main() {
+        const data = await doApiCall("getInfo", {});
+        console.log(data);
+        const minDate = new Date(data.firstPost * 1000);
+        const maxDate = new Date(data.lastPost * 1000);
+        const minDTL = convertTime(minDate);
+        const maxDTL = convertTime(maxDate);
+        const min = document.querySelector("#time-min");
+        const max = document.querySelector("#time-max");
+
+        min.setAttribute("min", minDTL);
+        min.setAttribute("max", maxDTL);
+        max.setAttribute("min", minDTL);
+        max.setAttribute("max", maxDTL);
+        min.value = minDTL;
+        max.value = maxDTL;
+
+        const chapterMin = document.querySelector("#chapter-min");
+        const chapterMax = document.querySelector("#chapter-max");
+        chapterMin.setAttribute("min", data.firstChapter);
+        chapterMin.setAttribute("max", data.lastChapter);
+        chapterMax.setAttribute("min", data.firstChapter);
+        chapterMax.setAttribute("max", data.lastChapter);
+        chapterMin.value = data.firstChapter;
+        chapterMax.value = data.lastChapter;
+        //
+        const url = new URL(window.location.href);
+        const paramsObject = Object.fromEntries(url.searchParams.entries());
+        urlParams = paramsObject;
+
+        if (paramsObject.Submitter != null) {
+            author.value = "author-On";
+            authorInput.removeAttribute("hidden");
+            authorInput.value = paramsObject.Submitter;
+        }
+        if (paramsObject.Inpostid != null) {
+            postId.value = "postId-on";
+            postidInput.removeAttribute("hidden");
+            postidInput.value = paramsObject.Inpostid;
+        }
+        if (paramsObject.limit != null){
+          limit.value = paramsObject.limit
+        }
+        else{
+          limit.value = 0;
+        }
+
+        const timeSpan = document.querySelector("#before");
+
+        if (
+            paramsObject.StartChapter != null ||
+            paramsObject.EndChapter != null
+        ) {
+            if (paramsObject.StartChapter != null) {
+                chapterMin.value = paramsObject.StartChapter;
+            }
+            if (paramsObject.EndChapter != null) {
+                chapterMax.value = paramsObject.EndChapter;
+            }
+            timeSpan.value = "Chapter";
+            const selector = document.querySelector("#time-selectors-chapter");
+            selector.removeAttribute("hidden");
+        } else if (
+            paramsObject.StartTime != null ||
+            paramsObject.EndTime != null
+        ) {
+            if (paramsObject.StartTime != null) {
+                min.value = convertTime(
+                    new Date(paramsObject.StartTime * 1000),
+                );
+            }
+            if (paramsObject.EndTime != null) {
+                max.value = convertTime(new Date(paramsObject.EndTime * 1000));
+            }
+            timeSpan.value = "Time";
+            const selector = document.querySelector("#time-selectors-time");
+            selector.removeAttribute("hidden");
+        }
+
+        if (paramsObject.queryType != null) {
+            switch (paramsObject.queryType) {
+                case "sub":
+                    document.querySelector("#left-side").removeAttribute('hidden')
+                    document.querySelector("#right-side").removeAttribute("hidden")
+
+                    searchType.value = "sub";
+                    searchInput.value = paramsObject.query;
+                    const query = await doApiCall("query", paramsObject);
+                    pushSubposts(query, paramsObject);
+                    break;
+                case "user":
+                    searchType.value = "user";
+                    searchInput.value = paramsObject.query;
+                    const users = await doApiCall("findUser", paramsObject);
+                    const mainBody = document.querySelector("#main-body");
+                    mainBody.innerHTML = "";
+                    pushTable(
+                        users,
+                        "username",
+                        "similarity score",
+                        (usernameObject) => {
+                            console.log(usernameObject);
+                            const currentUrl = new URL(window.location.href);
+                            const url = {
+                                Submitter: usernameObject[0],
+                                queryType: "sub",
+                                query: "",
+                            };
+                            setUrl(url);
+                            window.location.reload();
+                        },
+                    );
+                    break;
+                case "title":
+                    searchType.value = "title";
+                    searchInput.value = paramsObject.query;
+                    const posts = await doApiCall("findPost", paramsObject);
+                    const mb = document.querySelector("#main-body");
+                    mb.innerHTML = "";
+
+                    pushTable(posts, "post name", "post id", (postObject) => {
+                        const currentUrl = new URL(window.location.href);
+                        const url = {
+                            Inpostid: postObject[1],
+                            queryType: "sub",
+                            query: "",
+                        };
+                        setUrl(url);
+                        window.location.reload();
+                    });
+                    break;
+                case "replyChain":
+                    document.querySelector("#left-side").removeAttribute('hidden')
+                    document.querySelector("#right-side").removeAttribute("hidden")
+
+                    const chain = await doApiCall(
+                        "getReplyChain",
+                        paramsObject,
+                    );
+                    pushSubposts(chain, paramsObject);
+                    break;
+                case "solo":
+                    document.querySelector("#left-side").removeAttribute('hidden')
+                    document.querySelector("#right-side").removeAttribute("hidden")
+                    const solo = await doApiCall("getPostId", paramsObject);
+                    pushSubposts(solo);
+                    break;
+            }
+        } else {
+            document.querySelector("#left-side").removeAttribute('hidden')
+            document.querySelector("#right-side").removeAttribute("hidden")
+            defaultSearch();
+        }
+    }
+
+    main();
+</script>
