@@ -12,6 +12,11 @@
 </head>
 
 <body>
+    <small>This project is a dump of Arlong Park Fourms, scraped in April</small>
+    <br>
+    <small>To view the source: <a href="https://git.dog/Caroline/ArlongParkScrapeAndInterface">https://git.dog/Caroline/ArlongParkScrapeAndInterface</a></small>
+    <br>
+    <small>Version 1.0.0</small>
     <main>
         <div id="top">
             <div hidden id="warning" >
@@ -371,6 +376,7 @@
 
 <script id="chart-lib">
     let chart = null;
+    let chartType = null;
     function downSample(list, interval) {
         let i = 0;
         let counter = interval;
@@ -420,9 +426,25 @@
         return result;
     }
 
+    function chartInit(chartKind){
+      const mb = document.querySelector("#main-body-holder");
+      mb.scrollTop = 0;
+      const ctx = document.getElementById("chart-render");
+      const attribute = ctx.getAttribute('hidden');
+      console.log(attribute)
+      if (attribute == null && chartType == chartKind){
+        console.log("!")
+        ctx.setAttribute("hidden", "")
+        chartType = null;
+        return false
+      };
+      return true
+    }
     function renderBarChart() {
-        const mb = document.querySelector("#main-body-holder");
-        mb.scrollTop = 0;
+        if (!chartInit("bar")){
+          return
+        }
+        chartType = "bar"
         if (chart != null) {
             chart.destroy();
         }
@@ -454,8 +476,11 @@
     }
 
     function renderLineChart() {
-        const mb = document.querySelector("#main-body-holder");
-        mb.scrollTop = 0;
+        if (!chartInit("line")){
+          return
+        }
+        chartType = "line"
+
         if (chart != null) {
             chart.destroy();
         }
@@ -531,7 +556,7 @@
 </script>
 
 <script id="lib-layout">
-    const endPoint = "https://albassort.com"
+    const endPoint = "https://albassort.com/ArlongPark"
     let order = "Oldest";
     function setUrl(params) {
         const url = new URL(window.location.href);
