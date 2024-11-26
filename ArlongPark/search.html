@@ -575,7 +575,8 @@
           Object.entries(params).forEach(([key, value]) => {
               apiLocation.searchParams.set(key, value);
           });
-          apiLocation.pathname = path;
+          apiLocation.pathname = apiLocation.pathname + "/" + path;
+          console.log(apiLocation)
           const queryResponse = await fetch(apiLocation);
           const qObject = await queryResponse.json();
           responseObject = qObject;
@@ -1042,7 +1043,6 @@
     }
     async function main() {
         const data = await doApiCall("getInfo", {});
-        console.log(data);
         const minDate = new Date(data.firstPost * 1000);
         const maxDate = new Date(data.lastPost * 1000);
         const minDTL = convertTime(minDate);
